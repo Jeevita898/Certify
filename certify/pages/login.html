@@ -51,75 +51,45 @@
 
 
   <script src="../js/auth.js"></script>
+  
+  <script src="../js/auth.js"></script>
 
-  <script>
+<script>
+  const form = document.getElementById('loginForm');
+  const errorBox = document.getElementById('errorBox');
 
-    const form =
-      document.getElementById('loginForm');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-    const errorBox =
-      document.getElementById('errorBox');
+    errorBox.classList.add('hidden');
+    errorBox.textContent = '';
 
-    form.addEventListener(
-      'submit',
-      async (e) => {
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const password = document.getElementById('password').value;
 
-        e.preventDefault();
+    try {
+      const result = await doLogin(email, password);
 
-        errorBox.style.display = 'none';
-
-        const email =
-          document.getElementById('email').value.trim();
-
-        const password =
-          document.getElementById('password').value;
-
-        try {
-
-          const result = await doLogin(
-            email,
-            password
-          );
-
-          if (!result.success) {
-
-            throw new Error(
-              result.message || 'Login failed'
-            );
-
-          }
-
-          const user = result.user;
-
-          if (user.role === 'student') {
-
-            window.location.href =
-              'student-dashboard.html';
-
-          } else if (user.role === 'faculty') {
-
-            window.location.href =
-              'faculty-dashboard.html';
-
-          } else {
-
-            window.location.href =
-              'admin-dashboard.html';
-
-          }
-
-        } catch (err) {
-
-          errorBox.style.display = 'block';
-
-          errorBox.textContent = err.message;
-
-        }
-
+      if (!result.success) {
+        throw new Error(result.message || 'Invalid email or password');
       }
-    );
 
-  </script>
+      const user = result.user;
+
+      if (user.role === 'student') {
+        window.location.href = 'student-dashboard.html';
+      } else if (user.role === 'faculty') {
+        window.location.href = 'faculty-dashboard.html';
+      } else {
+        window.location.href = 'admin-dashboard.html';
+      }
+
+    } catch (err) {
+      errorBox.classList.remove('hidden');
+      errorBox.textContent = err.message || 'Invalid email or password';
+    }
+  });
+</script>
 
 </body>
 
