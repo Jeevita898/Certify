@@ -116,7 +116,7 @@ document.getElementById('sidebarNav').innerHTML = buildSidebar(navItems[role]);
 async function loadLeaderboard() {
   try {
     const token = getToken();
-    const res = await fetch('http://localhost:5000/api/leaderboard', {
+    const res = await fetch('${API_BASE}/leaderboard', {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
