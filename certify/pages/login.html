@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Login — Certify</title>
+
+  <link rel="stylesheet" href="../css/style.css" />
+
+
+</head>
+
+<body>
+
+  <div class="auth-wrap">
+    <div class="auth-card fade-up">
+
+      <div class="auth-title text-center">Certify</div>
+      <div class="auth-sub text-center">Login to continue</div>
+
+      <div id="errorBox" class="alert alert-error hidden"></div>
+
+      <form id="loginForm">
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="email" class="form-control" required placeholder="Enter email">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="password" class="form-control" required placeholder="Enter password">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">
+          Login
+        </button>
+
+      </form>
+
+      <div class="auth-footer">
+        Don't have an account?
+        <a href="signup.html">Register</a>
+      </div>
+
+    </div>
+  </div>
+
+
+  <script src="../js/auth.js"></script>
+
+  <script>
+
+    const form =
+      document.getElementById('loginForm');
+
+    const errorBox =
+      document.getElementById('errorBox');
+
+    form.addEventListener(
+      'submit',
+      async (e) => {
+
+        e.preventDefault();
+
+        errorBox.style.display = 'none';
+
+        const email =
+          document.getElementById('email').value.trim();
+
+        const password =
+          document.getElementById('password').value;
+
+        try {
+
+          const result = await doLogin(
+            email,
+            password
+          );
+
+          if (!result.success) {
+
+            throw new Error(
+              result.message || 'Login failed'
+            );
+
+          }
+
+          const user = result.user;
+
+          if (user.role === 'student') {
+
+            window.location.href =
+              'student-dashboard.html';
+
+          } else if (user.role === 'faculty') {
+
+            window.location.href =
+              'faculty-dashboard.html';
+
+          } else {
+
+            window.location.href =
+              'admin-dashboard.html';
+
+          }
+
+        } catch (err) {
+
+          errorBox.style.display = 'block';
+
+          errorBox.textContent = err.message;
+
+        }
+
+      }
+    );
+
+  </script>
+
+</body>
+
+</html>

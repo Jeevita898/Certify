@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VTU Student Dashboard — Certify</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+
+<div id="navbar"></div>
+
+<div class="dash-wrap">
+
+<aside class="sidebar">
+
+<div class="sidebar-profile">
+<div class="avatar avatar-lg" id="sideAvatar"></div>
+<div class="sidebar-name" id="sideName"></div>
+<div class="sidebar-sub" id="sideUSN"></div>
+<div class="sidebar-sub" id="sideDept"></div>
+</div>
+
+<nav class="sidebar-nav" id="sidebarNav"></nav>
+
+</aside>
+
+<main class="fade-up">
+
+<div class="page-hdr">
+<h2>VTU Activity Dashboard</h2>
+<p>Track your VTU activity points and upload certificates category-wise</p>
+</div>
+
+<div class="stats-row">
+
+<div class="stat-card">
+<div class="stat-label">Total Submitted</div>
+<div class="stat-value" id="statTotal">—</div>
+</div>
+
+<div class="stat-card">
+<div class="stat-label">Approved</div>
+<div class="stat-value" id="statApproved" style="color:var(--green)">—</div>
+</div>
+
+<div class="stat-card">
+<div class="stat-label">Pending</div>
+<div class="stat-value" id="statPending" style="color:var(--gold)">—</div>
+</div>
+
+<div class="stat-card">
+<div class="stat-label">Points Earned</div>
+<div class="stat-value" id="statPoints" style="color:var(--accent)">—</div>
+</div>
+
+</div>
+
+<!-- Student Progress Intelligence -->
+<div class="card mb-4" style="padding: 1.5rem;">
+  <div class="flex" style="justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h3 style="margin: 0; font-size: 1.2rem;">Graduation Tracker</h3>
+    <span class="badge" id="progressStatus" style="font-size: 0.9rem;">Evaluating...</span>
+  </div>
+  
+  <div style="background: var(--surface); height: 20px; border-radius: 10px; overflow: hidden; margin-bottom: 0.5rem; border: 1px solid var(--border);">
+    <div id="progressBar" style="height: 100%; width: 0%; background: var(--accent); transition: width 0.5s ease;"></div>
+  </div>
+  
+  <div class="flex" style="justify-content: space-between; font-size: 0.9rem; color: var(--muted);">
+    <span>0 Points</span>
+    <span><strong id="progressPoints" style="color: var(--text);">0</strong> / 100 Points</span>
+    <span>100 Points</span>
+  </div>
+  
+  <p id="progressPrediction" style="margin-top: 1rem; font-size: 0.95rem; color: var(--subtle); border-left: 3px solid var(--accent); padding-left: 10px;">
+    Loading AI prediction...
+  </p>
+</div>
+
+<!-- Smart Recommendation Engine -->
+<div class="card mb-4" style="padding: 1.5rem; border-left: 4px solid var(--primary);">
+  <h3 style="margin-top: 0; font-size: 1.2rem; margin-bottom: 0.5rem;">🤖 Smart Recommendation Engine</h3>
+  <div id="recommendationEngine">
+    <p class="text-muted" style="margin: 0; font-size: 0.95rem;">Analyzing your deficits...</p>
+  </div>
+</div>
+
+<!-- Certificate Journey Timeline -->
+<div class="card mb-4" style="padding: 1.5rem;">
+  <h3 style="margin-top: 0; font-size: 1.2rem; margin-bottom: 1rem;">🗓️ Activity Journey Timeline</h3>
+  <div id="timelineWrap" style="border-left: 2px solid var(--border); padding-left: 1rem; margin-left: 0.5rem;">
+    <p class="text-muted" style="margin: 0; font-size: 0.95rem;">Loading timeline...</p>
+  </div>
+</div>
+
+<div class="section-title mb-4">
+VTU Activity Categories
+</div>
+
+<div id="tableWrap">
+
+<div class="empty">
+<div class="empty-icon">⏳</div>
+<h3>Loading...</h3>
+</div>
+
+</div>
+
+</main>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="../js/auth.js"></script>
+<script src="../js/utils.js"></script>
+
+<script>
+
+const user = requireAuth('student');
+
+let allCerts = [];
+
+const headers = [
+  { name:'Helping Local School Students', max:20 },
+  { name:'Rural Development / Village Outreach', max:20 },
+  { name:'Environmental Activities', max:15 },
+  { name:'Blood Donation / Health Camps', max:15 },
+  { name:'NSS / NCC / Social Service', max:20 },
+  { name:'Sports / Yoga / Fitness', max:15 },
+  { name:'Cultural Activities', max:15 },
+  { name:'Technical Events / Hackathon / Workshop', max:20 },
+  { name:'Internship / Skill Development', max:25 },
+  { name:'Research Paper / Innovation / Patent', max:25 },
+  { name:'Entrepreneurship / Startup Work', max:25 },
+  { name:'Tourism Promotion / Heritage', max:15 },
+  { name:'Online Certification Courses', max:15 },
+  { name:'Leadership / Student Clubs', max:15 },
+  { name:'Other Approved Activity', max:10 }
+];
+
+if(user) init();
+
+function init(){
+
+  renderNavbar(
+    'student',
+    user.firstName + ' ' + user.lastName
+  );
+
+  document.getElementById('sideAvatar').textContent =
+    initials(user.firstName + ' ' + user.lastName);
+
+  document.getElementById('sideName').textContent =
+    user.firstName + ' ' + user.lastName;
+
+  document.getElementById('sideUSN').textContent =
+    user.usn;
+
+  document.getElementById('sideDept').textContent =
+    user.department;
+
+  document.getElementById('sidebarNav').innerHTML =
+    buildSidebar([
+      { href:'student-dashboard.html', icon:'📊', label:'Dashboard' },
+      { href:'add-activity.html', icon:'➕', label:'Add Activity' },
+      { href:'events.html', icon:'📅', label:'Events' },
+      { href:'notifications.html', icon:'🔔', label:'Notifications' },
+      { divider:true },
+      { href:'student-profile.html', icon:'👤', label:'My Profile' }
+    ]);
+
+  loadData();
+}
+
+async function loadData(){
+
+  try{
+
+    const [statsRes, certsRes] =
+      await Promise.all([
+        getStudentStats(),
+        getMyActivities()
+      ]);
+
+    const s = statsRes.stats;
+
+    document.getElementById('statTotal').textContent = s.total;
+    document.getElementById('statApproved').textContent = s.approved;
+    document.getElementById('statPending').textContent = s.pending;
+    document.getElementById('statPoints').textContent = s.points;
+    
+    // --- Update Graduation Tracker ---
+    const points = parseInt(s.points) || 0;
+    const maxPoints = 100;
+    const percentage = Math.min(100, Math.round((points / maxPoints) * 100));
+    
+    document.getElementById('progressBar').style.width = percentage + '%';
+    document.getElementById('progressPoints').textContent = points;
+    
+    const statusBadge = document.getElementById('progressStatus');
+    const predictionText = document.getElementById('progressPrediction');
+    
+    if (points >= 100) {
+      statusBadge.textContent = 'Completed';
+      statusBadge.style.backgroundColor = 'var(--green)';
+      predictionText.innerHTML = '🌟 <strong>AI Prediction:</strong> You have successfully completed the VTU activity point requirements!';
+    } else if (points >= 75) {
+      statusBadge.textContent = 'On Track';
+      statusBadge.style.backgroundColor = 'var(--accent)';
+      predictionText.innerHTML = '📈 <strong>AI Prediction:</strong> You are highly likely to complete the VTU requirements this semester.';
+    } else if (points >= 40) {
+      statusBadge.textContent = 'In Progress';
+      statusBadge.style.backgroundColor = 'var(--gold)';
+      predictionText.innerHTML = '⚖️ <strong>AI Prediction:</strong> You are making steady progress. Consider participating in Technical Events or Internships to boost points quickly.';
+    } else {
+      statusBadge.textContent = 'Needs Attention';
+      statusBadge.style.backgroundColor = 'var(--red, #ef4444)';
+      predictionText.innerHTML = '⚠️ <strong>AI Prediction:</strong> You need to accelerate your participation to meet the VTU requirements on time.';
+    }
+
+    allCerts = certsRes.activities || [];
+
+    renderTable();
+    renderTimeline();
+    renderRecommendations();
+
+  }catch(err){
+    showToast(err.message);
+  }
+}
+
+function renderTimeline() {
+  const wrap = document.getElementById('timelineWrap');
+  const approvedCerts = allCerts.filter(c => c.status === 'approved').sort((a, b) => new Date(a.date) - new Date(b.date));
+  
+  if (approvedCerts.length === 0) {
+    wrap.innerHTML = '<p class="text-muted" style="margin: 0; font-size: 0.95rem;">No approved activities yet. Upload your first certificate to start your journey!</p>';
+    return;
+  }
+  
+  let html = '';
+  approvedCerts.forEach(cert => {
+    const year = new Date(cert.date).getFullYear();
+    html += `
+      <div style="position: relative; margin-bottom: 1.5rem;">
+        <div style="position: absolute; left: -1.4rem; top: 0.2rem; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface);"></div>
+        <div style="font-weight: bold; color: var(--accent); font-size: 0.9rem;">${year}</div>
+        <div style="font-size: 1.05rem; margin-top: 0.2rem;">${cert.name || 'Activity'}</div>
+        <div style="font-size: 0.85rem; color: var(--subtle);">${cert.type} <span style="color: var(--green); margin-left: 10px;">+${cert.points} pts</span></div>
+      </div>
+    `;
+  });
+  wrap.innerHTML = html;
+}
+
+function renderRecommendations() {
+  const wrap = document.getElementById('recommendationEngine');
+  
+  // Calculate deficits
+  const deficits = [];
+  headers.forEach(h => {
+    const certsInCat = allCerts.filter(c => c.type === h.name && c.status === 'approved');
+    const pts = certsInCat.reduce((sum, c) => sum + (c.points || 0), 0);
+    if (pts < h.max) {
+      deficits.push({ name: h.name, needed: h.max - pts });
+    }
+  });
+  
+  // Sort deficits by biggest gap
+  deficits.sort((a, b) => b.needed - a.needed);
+  
+  if (deficits.length === 0) {
+    wrap.innerHTML = '<p class="text-muted" style="margin: 0; font-size: 0.95rem;">Amazing! You have maxed out all categories.</p>';
+    return;
+  }
+  
+  let html = '<p style="margin: 0 0 1rem 0; font-size: 0.95rem;">You still need points in these areas:</p>';
+  html += '<ul style="margin: 0 0 1rem 0; padding-left: 1.5rem; color: var(--subtle);">';
+  deficits.slice(0, 3).forEach(d => {
+    html += `<li><strong>${d.needed} points</strong> in ${d.name}</li>`;
+  });
+  html += '</ul>';
+  
+  // Suggest actual events based on biggest deficit
+  const biggestDeficit = deficits[0].name;
+  let suggestion = 'Technical Workshop or Hackathon';
+  if (biggestDeficit.includes('NSS') || biggestDeficit.includes('Rural') || biggestDeficit.includes('Blood')) suggestion = 'Blood Donation Camp or NSS Volunteer Work';
+  if (biggestDeficit.includes('Sports')) suggestion = 'University Sports Meet';
+  if (biggestDeficit.includes('Research') || biggestDeficit.includes('Internship')) suggestion = 'Summer Internship or Research Paper Publication';
+  
+  html += `<div style="background: var(--bg); padding: 1rem; border-radius: 8px; border: 1px dashed var(--primary);">
+    <strong style="color: var(--primary);">Suggested upcoming activity:</strong><br>
+    <span style="font-size: 1.1rem; display: inline-block; margin-top: 0.5rem;">✨ ${suggestion}</span>
+  </div>`;
+  
+  wrap.innerHTML = html;
+}
+
+function renderTable(){
+
+  const wrap = document.getElementById('tableWrap');
+
+  wrap.innerHTML = `
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Sl No</th>
+            <th>VTU Header</th>
+            <th>Max Points</th>
+            <th>Status</th>
+            <th>Points</th>
+            <th>Certificate</th>
+            <th>Action</th>
+            <th>Audit</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${headers.map((h,i)=>{
+
+            const cert = allCerts.find(c => c.type === h.name);
+
+            return `
+              <tr>
+                <td>${i+1}</td>
+
+                <td>${h.name}</td>
+
+                <td>${h.max}</td>
+
+                <td>
+                  ${cert
+                    ? statusBadge(cert.status)
+                    : '<span class="badge">Not Submitted</span>'}
+                </td>
+
+                <td>
+                  ${cert ? cert.points : 0}
+                </td>
+
+                <td>
+                  ${cert
+      ? (
+          cert.fileUrl &&
+          cert.fileUrl.toLowerCase().includes('.pdf')
+            ? `<a href="https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(cert.fileUrl)}" target="_blank">View</a>`
+            : `<a href="${cert.fileUrl}" target="_blank">View</a>`
+        )
+      : '—'}
+                </td>
+
+                <td>
+                  <a href="add-activity.html?type=${encodeURIComponent(h.name)}"
+                     class="btn btn-primary btn-sm">
+                    Add
+                  </a>
+                </td>
+
+                <td>
+                  ${cert
+                    ? `<button class="btn btn-sm" onclick="viewAudit('${cert._id}')">Audit</button>`
+                    : '—'}
+                </td>
+              </tr>
+            `;
+
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function viewAudit(activityId) {
+
+  try {
+
+    const token = localStorage.getItem('cert_token');
+
+    if (!token) {
+      alert('No token found. Please login again.');
+      return;
+    }
+
+    const res = await fetch(`${API_BASE}/activities/${activityId}/audit`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert(data.message || 'Failed to load audit history');
+      return;
+    }
+
+    let msg = 'Audit History:\n\n';
+
+    if (data.audits.length === 0) {
+      msg += 'No audit history found.';
+    } else {
+      data.audits.forEach(audit => {
+        msg += `${audit.actionByName} ${audit.actionType}\n`;
+        msg += `Status: ${audit.oldStatus} → ${audit.newStatus}\n`;
+        msg += `Points: ${audit.oldPoints} → ${audit.newPoints}\n`;
+        msg += `Date: ${new Date(audit.createdAt).toLocaleString()}\n\n`;
+      });
+    }
+
+    alert(msg);
+
+  } catch (err) {
+    console.error(err);
+    alert('Failed to load audit history');
+  }
+}
+
+</script>
+
+</body>
+</html>

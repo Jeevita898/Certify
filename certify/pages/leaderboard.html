@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leaderboard — Certify Gamification</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+
+<div id="navbar"></div>
+
+<div class="dash-wrap">
+
+<aside class="sidebar">
+
+<div class="sidebar-profile">
+<div class="avatar avatar-lg" id="sideAvatar"></div>
+<div class="sidebar-name" id="sideName"></div>
+<div class="sidebar-sub" id="sideSub"></div>
+</div>
+
+<nav class="sidebar-nav" id="sidebarNav"></nav>
+
+</aside>
+
+<main class="fade-up">
+
+<div class="page-hdr">
+<h2>Gamification Leaderboard 🏆</h2>
+<p>Top contributors, departments, and badges earned across the university.</p>
+</div>
+
+<!-- Top Departments -->
+<div class="section-title mb-4">
+Top Departments
+</div>
+<div class="stats-row" id="topDeptsWrap">
+  <div class="empty">⏳ Loading...</div>
+</div>
+
+<!-- Top Students -->
+<div class="section-title mt-6 mb-4">
+Top 100 Students
+</div>
+
+<div class="card mb-4">
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+  <th>Rank</th>
+  <th>Student</th>
+  <th>Department</th>
+  <th>Points</th>
+  <th>Badges</th>
+</tr>
+</thead>
+<tbody id="leaderboardWrap">
+  <tr><td colspan="5"><div class="empty">⏳ Loading leaderboard...</div></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+</main>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="../js/auth.js"></script>
+<script src="../js/utils.js"></script>
+
+<script>
+const userStr = localStorage.getItem('cert_user');
+let role = 'student';
+if (userStr) {
+  try {
+    const user = JSON.parse(userStr);
+    role = user.role || 'student';
+    renderNavbar(role, user.name || (user.firstName + ' ' + user.lastName));
+    document.getElementById('sideAvatar').textContent = initials(user.name || user.firstName);
+    document.getElementById('sideName').textContent = user.name || (user.firstName + ' ' + user.lastName);
+    document.getElementById('sideSub').textContent = role.toUpperCase();
+  } catch(e){}
+}
+
+const navItems = {
+  'student': [
+    { href:'student-dashboard.html', icon:'📊', label:'Dashboard' },
+    { href:'add-activity.html', icon:'➕', label:'Add Activity' },
+    { href:'events.html', icon:'📅', label:'Events' },
+    { href:'leaderboard.html', icon:'🏆', label:'Leaderboard' },
+    { href:'notifications.html', icon:'🔔', label:'Notifications' },
+    { divider:true },
+    { href:'student-profile.html', icon:'👤', label:'My Profile' }
+  ],
+  'faculty': [
+    { href:'faculty-dashboard.html', icon:'📊', label:'Dashboard' },
+    { href:'leaderboard.html', icon:'🏆', label:'Leaderboard' },
+    { divider:true },
+    { href:'faculty-profile.html', icon:'👤', label:'My Profile' }
+  ],
+  'admin': [
+    { href:'admin-dashboard.html', icon:'📊', label:'Overview' },
+    { href:'admin-events.html', icon:'📅', label:'Manage Events' },
+    { href:'admin-faculty.html', icon:'👨‍🏫', label:'Faculty' },
+    { href:'leaderboard.html', icon:'🏆', label:'Leaderboard' }
+  ]
+};
+
+document.getElementById('sidebarNav').innerHTML = buildSidebar(navItems[role]);
+
+async function loadLeaderboard() {
+  try {
+    const token = getToken();
+    const res = await fetch('http://localhost:5000/api/leaderboard', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    
+    if (!data.success) throw new Error(data.message);
+    
+    // Render Departments
+    const deptWrap = document.getElementById('topDeptsWrap');
+    if (data.topDepartments.length === 0) {
+      deptWrap.innerHTML = '<div class="empty">No data yet</div>';
+    } else {
+      let dHtml = '';
+      data.topDepartments.forEach((d, i) => {
+        const medal = i === 0 ? '🥇' : (i === 1 ? '🥈' : (i === 2 ? '🥉' : '🏢'));
+        dHtml += `
+          <div class="stat-card" style="border-top: 3px solid var(--accent)">
+            <div class="stat-label flex gap-2 items-center">
+              <span>${medal}</span>
+              <span>${d.department}</span>
+            </div>
+            <div class="stat-value" style="color: var(--accent)">${d.points} <span style="font-size: 1rem; color: var(--subtle)">pts</span></div>
+          </div>
+        `;
+      });
+      deptWrap.innerHTML = dHtml;
+    }
+    
+    // Render Students
+    const wrap = document.getElementById('leaderboardWrap');
+    if (data.topStudents.length === 0) {
+      wrap.innerHTML = '<tr><td colspan="5"><div class="empty">No students found</div></td></tr>';
+      return;
+    }
+    
+    let html = '';
+    data.topStudents.forEach((st, i) => {
+      let rankBadge = i + 1;
+      if (i === 0) rankBadge = '🥇';
+      if (i === 1) rankBadge = '🥈';
+      if (i === 2) rankBadge = '🥉';
+      
+      const badgeHtml = st.badges.map(b => `<span class="badge" style="background: var(--surface); border: 1px solid var(--accent); color: var(--accent); margin-right: 4px;">${b}</span>`).join('');
+      
+      html += `
+        <tr>
+          <td style="font-size: 1.2rem; font-weight: bold; color: var(--subtle)">${rankBadge}</td>
+          <td>
+            <div style="font-weight: 500">${st.firstName} ${st.lastName}</div>
+            <div class="text-muted text-sm">${st.usn}</div>
+          </td>
+          <td>${st.department}</td>
+          <td style="font-weight: bold; color: var(--green); font-size: 1.1rem;">${st.points}</td>
+          <td>${badgeHtml || '<span class="text-muted">—</span>'}</td>
+        </tr>
+      `;
+    });
+    wrap.innerHTML = html;
+    
+  } catch (err) {
+    document.getElementById('leaderboardWrap').innerHTML = `<tr><td colspan="5"><div class="empty text-danger">${err.message}</div></td></tr>`;
+  }
+}
+
+loadLeaderboard();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty — Certify</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="navbar"></div>
+<div class="dash-wrap">
+  <aside class="sidebar">
+    <div class="sidebar-profile">
+      <div class="avatar avatar-lg avatar-admin">A</div>
+      <div class="sidebar-name">System Admin</div>
+      <span class="badge badge-rejected mt-2">Admin</span>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+  </aside>
+  <main class="fade-up">
+    <div class="page-hdr"><h2>Faculty proctors</h2></div>
+    <div id="tableWrap"><div class="empty"><div class="empty-icon">⏳</div><h3>Loading...</h3></div></div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script src="../js/auth.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+  const user = requireAuth('admin');
+  if (user) init();
+
+  async function init() {
+    renderNavbar('admin','Admin');
+    document.getElementById('sidebarNav').innerHTML = buildSidebar([
+      { href:'admin-dashboard.html', icon:'📊', label:'Overview' },
+      { href:'admin-events.html',    icon:'📅', label:'Manage events' },
+      { href:'admin-faculty.html',   icon:'👨‍🏫', label:'Faculty' },
+    ]);
+    try {
+      const { faculty } = await getFacultyList().then(f=>({faculty:f}));
+      if (!faculty.length) {
+        document.getElementById('tableWrap').innerHTML = `<div class="empty"><div class="empty-icon">👨‍🏫</div><h3>No faculty found</h3><p>Run <code>npm run seed</code> in the backend.</p></div>`;
+        return;
+      }
+      document.getElementById('tableWrap').innerHTML = `<div class="table-wrap"><table>
+        <thead><tr><th>Name</th><th>Email</th><th>Department</th><th>Emp ID</th></tr></thead>
+        <tbody>${faculty.map(f=>`<tr>
+          <td><div class="flex items-center gap-2">
+            <div class="avatar avatar-faculty" style="width:32px;height:32px;font-size:12px">${initials(f.name)}</div>
+            <div style="font-weight:500">${f.name}</div>
+          </div></td>
+          <td class="text-muted">${f.email}</td>
+          <td>${f.department}</td>
+          <td><span class="tag">${f.empId}</span></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`;
+    } catch(err) { showToast('Error: '+err.message); }
+  }
+</script>
+</body>
+</html>

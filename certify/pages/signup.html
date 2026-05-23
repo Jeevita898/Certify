@@ -1,0 +1,123 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — Certify</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav class="navbar">
+  <a href="../index.html" class="nav-brand">Certify <small>Activity Management</small></a>
+  <div></div>
+  <div class="nav-actions"><a href="login.html" class="btn btn-outline btn-sm">Sign in instead</a></div>
+</nav>
+<div class="auth-wrap">
+  <div class="auth-card fade-up" style="max-width:520px">
+    <div class="auth-title">Create student account</div>
+    <div class="auth-sub">Fill in your details to get started</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">First name</label>
+        <input type="text" id="firstName" class="form-control" placeholder="Arun">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last name</label>
+        <input type="text" id="lastName" class="form-control" placeholder="Kumar">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email address</label>
+      <input type="email" id="email" class="form-control" placeholder="arun@college.edu">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">USN / Roll number</label>
+        <input type="text" id="usn" class="form-control" placeholder="4MN21CS001">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Department</label>
+        <select id="dept" class="form-control">
+          <option value="">Select department</option>
+          <option>Computer Science & Engineering</option>
+          <option>Electronics & Communication</option>
+          <option>Mechanical Engineering</option>
+          <option>Information Science</option>
+          <option>Civil Engineering</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Assigned Faculty Proctor</label>
+      <select id="faculty" class="form-control">
+        <option value="">Loading faculty...</option>
+      </select>
+      <div class="form-hint">Contact admin if your faculty is not listed.</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" id="password" class="form-control" placeholder="Min 8 characters">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm password</label>
+        <input type="password" id="confirmPassword" class="form-control" placeholder="Re-enter">
+      </div>
+    </div>
+    <div id="regError" class="form-error hidden"></div>
+    <button class="btn btn-primary btn-full mt-3" id="regBtn" onclick="handleRegister()">Create account</button>
+    <div class="auth-footer">Already have an account? <a href="login.html">Sign in</a></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="../js/auth.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+  const existing = getSession();
+  if (existing) redirectByRole(existing.role);
+
+  // Load faculty dropdown from API
+  async function loadFaculty() {
+    const list = await getFacultyList();
+    const sel  = document.getElementById('faculty');
+    sel.innerHTML = '<option value="">Select your faculty proctor</option>';
+    list.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value       = f._id;
+      opt.textContent = `${f.name} (${f.department})`;
+      sel.appendChild(opt);
+    });
+  }
+  loadFaculty();
+
+  async function handleRegister() {
+    const firstName       = document.getElementById('firstName').value.trim();
+    const lastName        = document.getElementById('lastName').value.trim();
+    const email           = document.getElementById('email').value.trim();
+    const usn             = document.getElementById('usn').value.trim();
+    const department      = document.getElementById('dept').value;
+    const facultyId       = document.getElementById('faculty').value;
+    const password        = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    clearError('regError');
+
+    if (!firstName||!lastName||!email||!usn||!department||!facultyId||!password||!confirmPassword) {
+      setError('regError','Please fill in all fields.'); return;
+    }
+    if (password !== confirmPassword) { setError('regError','Passwords do not match.'); return; }
+
+    setLoading('regBtn', true);
+    const result = await doRegister({ firstName, lastName, email, usn, department, facultyId, password });
+    setLoading('regBtn', false);
+    if (result.success) {
+      showToast('Account created! Redirecting...');
+      setTimeout(() => window.location.href = 'student-dashboard.html', 700);
+    } else {
+      setError('regError', result.message);
+    }
+  }
+</script>
+</body>
+</html>

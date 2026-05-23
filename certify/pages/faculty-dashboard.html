@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VTU Faculty Dashboard — Certify</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+
+<div id="navbar"></div>
+
+<div class="dash-wrap">
+
+<!-- Sidebar -->
+<aside class="sidebar">
+
+<div class="sidebar-profile">
+<div class="avatar avatar-lg avatar-faculty" id="sideAvatar"></div>
+<div class="sidebar-name" id="sideName"></div>
+<div class="sidebar-sub" id="sideDept"></div>
+<span class="badge badge-pending mt-2">Faculty Proctor</span>
+</div>
+
+<nav class="sidebar-nav" id="sidebarNav"></nav>
+
+</aside>
+
+<!-- Main -->
+<main class="fade-up">
+
+<div class="page-hdr">
+<h2>Faculty Dashboard</h2>
+<p>Student-wise grouped VTU activity approvals</p>
+</div>
+
+<!-- Stats -->
+<div class="stats-row">
+
+<div class="stat-card">
+<div class="stat-label">Students</div>
+<div class="stat-value" id="stStudents">—</div>
+</div>
+
+<div class="stat-card">
+<div class="stat-label">Total Activities</div>
+<div class="stat-value" id="stTotal">—</div>
+</div>
+
+<div class="stat-card">
+<div class="stat-label">Pending</div>
+<div class="stat-value" id="stPending" style="color:var(--gold)">—</div>
+</div>
+
+<div class="stat-card">
+<div class="stat-label">Approved</div>
+<div class="stat-value" id="stApproved" style="color:var(--green)">—</div>
+</div>
+
+</div>
+
+<!-- Top -->
+<div class="flex gap-2 mb-4">
+
+<input
+type="text"
+id="searchBox"
+class="form-control"
+placeholder="Search student..."
+style="max-width:250px"
+onkeyup="renderGrouped()">
+
+<button
+class="btn btn-success btn-sm"
+onclick="downloadPDF()">
+Download PDF
+</button>
+
+</div>
+
+<!-- Content -->
+<div id="groupWrap">
+
+<div class="empty">
+<div class="empty-icon">⏳</div>
+<h3>Loading...</h3>
+</div>
+
+</div>
+
+</main>
+
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+
+<div class="modal">
+
+<div class="modal-title">
+Reject Activity
+</div>
+
+<div class="form-group">
+
+<label class="form-label">
+Remark
+</label>
+
+<textarea
+id="rejectRemark"
+class="form-control">
+</textarea>
+
+</div>
+
+<div class="modal-actions">
+
+<button
+class="btn btn-outline"
+onclick="closeModal('rejectModal')">
+Cancel
+</button>
+
+<button
+class="btn btn-danger"
+onclick="confirmReject()">
+Reject
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- AI Review Modal -->
+<div class="modal-overlay" id="aiReviewModal">
+<div class="modal" style="max-width: 500px;">
+<div class="modal-title flex items-center gap-2">
+<span>🤖</span> AI Review Insights Panel
+</div>
+<div id="aiReviewContent">
+<div class="empty">⏳ Loading AI Review...</div>
+</div>
+<div class="modal-actions mt-4">
+<button class="btn btn-primary" onclick="closeModal('aiReviewModal')">Close</button>
+</div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="../js/auth.js"></script>
+<script src="../js/utils.js"></script>
+
+<script>
+async function openAiReview(id) {
+  openModal('aiReviewModal');
+  const content = document.getElementById('aiReviewContent');
+  content.innerHTML = '<div class="empty">⏳ Generating rule-based AI insights...</div>';
+  
+  try {
+    const token = getToken();
+    const res = await fetch(`http://localhost:5000/api/activities/${id}/ai-briefing`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    const data = await res.json();
+    
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to get AI review');
+    }
+    
+    const b = data.briefing;
+    
+    const riskColor = b.overallRisk === 'High' ? 'var(--red, #ef4444)' : (b.overallRisk === 'Medium' ? 'var(--gold, #f59e0b)' : 'var(--green, #22c55e)');
+    
+    content.innerHTML = `
+      <div style="background: var(--surface); padding: 1rem; border-radius: var(--r-md); margin-bottom: 1rem; border-left: 4px solid ${riskColor}">
+        <h4 style="margin:0 0 0.5rem 0">Risk Level: <span style="color: ${riskColor}">${b.overallRisk}</span></h4>
+        <p style="margin:0; font-size: 0.9rem; color: var(--subtle)">${b.summary}</p>
+      </div>
+      
+      <div style="margin-bottom: 1rem;">
+        <h4 style="margin: 0 0 0.5rem 0">Warnings ⚠️</h4>
+        ${b.warnings && b.warnings.length > 0 
+          ? `<ul style="margin:0; padding-left: 1.2rem; font-size: 0.9rem; color: var(--red, #ef4444)">
+              ${b.warnings.map(w => `<li>${w}</li>`).join('')}
+             </ul>`
+          : '<p style="margin:0; font-size: 0.9rem; color: var(--subtle)">No warnings detected.</p>'}
+      </div>
+      
+      <div style="margin-bottom: 1rem;">
+        <h4 style="margin: 0 0 0.5rem 0">Insights 💡</h4>
+        ${b.insights && b.insights.length > 0
+          ? `<ul style="margin:0; padding-left: 1.2rem; font-size: 0.9rem; color: var(--muted)">
+              ${b.insights.map(w => `<li>${w}</li>`).join('')}
+             </ul>`
+          : '<p style="margin:0; font-size: 0.9rem; color: var(--subtle)">No additional insights.</p>'}
+      </div>
+      
+      <div style="background: var(--bg); padding: 1rem; border-radius: var(--r-md); border: 1px solid var(--border);">
+        <strong>Recommended Action:</strong> ${b.recommendedAction} <br>
+        <strong>Suggested Points:</strong> ${b.recommendedPoints} <br>
+        <span style="font-size: 0.8rem; color: var(--subtle)">${b.pointsNote}</span>
+      </div>
+    `;
+    
+  } catch (err) {
+    content.innerHTML = `<div class="empty-icon">❌</div><h3 style="text-align:center">${err.message}</h3>`;
+  }
+}
+
+
+const user = requireAuth('faculty');
+
+let allActs = [];
+let myStudents = [];
+let rejectingId = null;
+
+if(user) init();
+
+function init(){
+
+renderNavbar(
+'faculty',
+user.name
+);
+
+document.getElementById('sideAvatar').textContent =
+initials(user.name);
+
+document.getElementById('sideName').textContent =
+user.name;
+
+document.getElementById('sideDept').textContent =
+user.department;
+
+document.getElementById('sidebarNav').innerHTML =
+buildSidebar([
+{ href:'faculty-dashboard.html', icon:'📊', label:'Dashboard' },
+{ divider:true },
+{ href:'faculty-profile.html', icon:'👤', label:'My Profile' }
+]);
+
+loadData();
+
+}
+
+async function loadData(){
+
+try{
+
+const [a,s] =
+await Promise.all([
+getFacultyActivities(),
+getAssignedStudents()
+]);
+
+allActs = a.activities || [];
+myStudents = s.students || [];
+
+updateStats();
+renderGrouped();
+
+}catch(err){
+
+showToast(err.message);
+
+}
+
+}
+
+function updateStats(){
+
+document.getElementById('stStudents').textContent =
+myStudents.length;
+
+document.getElementById('stTotal').textContent =
+allActs.length;
+
+document.getElementById('stPending').textContent =
+allActs.filter(x=>x.status==='pending').length;
+
+document.getElementById('stApproved').textContent =
+allActs.filter(x=>x.status==='approved').length;
+
+}
+
+function renderGrouped(){
+
+const wrap =
+document.getElementById('groupWrap');
+
+const q =
+document.getElementById('searchBox').value
+.toLowerCase();
+
+let html = '';
+
+myStudents.forEach(stu=>{
+
+const full =
+(stu.firstName + ' ' + stu.lastName);
+
+if(q && !full.toLowerCase().includes(q)) return;
+
+const acts =
+allActs.filter(a =>
+a.studentId &&
+a.studentId._id === stu._id
+);
+
+html += `
+
+<div class="card mb-4">
+
+<div class="flex items-center justify-between mb-3">
+
+<div>
+<h3 style="margin:0">
+${full}
+</h3>
+
+<div class="text-muted text-sm">
+${stu.usn} · ${stu.department}
+</div>
+</div>
+
+<div class="badge badge-approved">
+${acts.filter(x=>x.status==='approved').length}
+ Approved
+</div>
+
+</div>
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+<tr>
+<th>VTU Header</th>
+<th>Certificate</th>
+<th>Status</th>
+<th>Points</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody>
+
+${acts.length
+? acts.map(a=>`
+
+<tr>
+
+<td>${a.type}</td>
+
+<td>
+<a href="https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(a.fileUrl)}" target="_blank">
+  View
+</a>
+</td>
+
+<td>
+${statusBadge(a.status)}
+</td>
+
+<td>
+
+${a.status === 'pending'
+? `
+<input
+type="number"
+id="pts-${a._id}"
+min="1"
+max="50"
+style="width:80px">
+`
+: a.points}
+
+</td>
+
+<td>
+
+${a.status === 'pending'
+? `
+<button
+class="btn btn-outline btn-sm"
+onclick="openAiReview('${a._id}')">
+🤖 AI Review
+</button>
+
+<button
+class="btn btn-success btn-sm"
+onclick="approve('${a._id}')">
+Approve
+</button>
+
+<button
+class="btn btn-danger btn-sm"
+onclick="openReject('${a._id}')">
+Reject
+</button>
+`
+: 'Done'}
+
+</td>
+
+</tr>
+
+`).join('')
+: `
+<tr>
+<td colspan="5">
+No submissions yet
+</td>
+</tr>`}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+wrap.innerHTML =
+html || `
+<div class="empty">
+<div class="empty-icon">📄</div>
+<h3>No students found</h3>
+</div>
+`;
+
+}
+
+async function approve(id){
+
+const points =
+document.getElementById(`pts-${id}`).value;
+
+if(!points || points < 1){
+showToast('Enter valid points');
+return;
+}
+
+try{
+
+await validateActivity(
+id,
+'approved',
+'',
+points
+);
+
+showToast('Approved');
+
+loadData();
+
+}catch(err){
+
+showToast(err.message);
+
+}
+
+}
+
+function openReject(id){
+
+rejectingId = id;
+
+document.getElementById('rejectRemark').value = '';
+
+openModal('rejectModal');
+
+}
+
+async function confirmReject(){
+
+const remark =
+document.getElementById('rejectRemark').value.trim();
+
+if(!remark){
+showToast('Enter remark');
+return;
+}
+
+try{
+
+await validateActivity(
+rejectingId,
+'rejected',
+remark
+);
+
+closeModal('rejectModal');
+
+showToast('Rejected');
+
+loadData();
+
+}catch(err){
+
+showToast(err.message);
+
+}
+
+}
+
+async function downloadPDF(){
+
+try{
+
+const token =
+localStorage.getItem('cert_token');
+
+const res =
+await fetch(
+'http://localhost:5000/api/reports/faculty-report',
+{
+headers:{
+Authorization:`Bearer ${token}`
+}
+});
+
+const blob =
+await res.blob();
+
+const url =
+window.URL.createObjectURL(blob);
+
+const a =
+document.createElement('a');
+
+a.href = url;
+a.download = 'faculty-report.pdf';
+
+a.click();
+
+window.URL.revokeObjectURL(url);
+
+}catch(err){
+
+showToast(err.message);
+
+}
+
+}
+
+</script>
+
+</body>
+</html>

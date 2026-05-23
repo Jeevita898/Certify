@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Events — Certify</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="navbar"></div>
+<div class="dash-wrap">
+  <aside class="sidebar">
+    <div class="sidebar-profile">
+      <div class="avatar avatar-lg avatar-admin">A</div>
+      <div class="sidebar-name">System Admin</div>
+      <span class="badge badge-rejected mt-2">Admin</span>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+  </aside>
+  <main class="fade-up">
+    <div class="flex items-center justify-between mb-6">
+      <div class="page-hdr" style="margin-bottom:0"><h2>Manage events</h2><p>Create and manage events visible to students</p></div>
+      <button class="btn btn-primary" onclick="openAdd()">+ Add event</button>
+    </div>
+    <div id="tableWrap"><div class="empty"><div class="empty-icon">⏳</div><h3>Loading...</h3></div></div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="eventModal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Add event</div>
+    <div class="form-group"><label class="form-label">Event name</label><input type="text" id="evName" class="form-control" placeholder="e.g. React.js Bootcamp"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select id="evType" class="form-control">
+          <option>Workshop</option><option>Hackathon</option><option>Seminar</option>
+          <option>Cultural</option><option>Sports</option><option>NSS/NCC</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Date</label><input type="date" id="evDate" class="form-control"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Points</label><input type="number" id="evPoints" class="form-control" placeholder="10" min="1" max="50"></div>
+      <div class="form-group"><label class="form-label">Total seats</label><input type="number" id="evSeats" class="form-control" placeholder="50" min="1"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Description</label><textarea id="evDesc" class="form-control"></textarea></div>
+    <div id="evError" class="form-error hidden"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('eventModal')">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveEvent()">Add event</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="../js/auth.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+  const user = requireAuth('admin');
+  let editingId = null, events = [];
+  if (user) init();
+
+  async function init() {
+    renderNavbar('admin','Admin');
+    document.getElementById('sidebarNav').innerHTML = buildSidebar([
+      { href:'admin-dashboard.html', icon:'📊', label:'Overview' },
+      { href:'admin-events.html',    icon:'📅', label:'Manage events' },
+      { href:'admin-faculty.html',   icon:'👨‍🏫', label:'Faculty' },
+    ]);
+    await loadEvents();
+  }
+
+  async function loadEvents() {
+    try {
+      const res = await getAllEvents();
+      events = res.events || [];
+      renderTable();
+    } catch(err) { showToast('Error: '+err.message); }
+  }
+
+  function renderTable() {
+    if (!events.length) {
+      document.getElementById('tableWrap').innerHTML = `<div class="empty"><div class="empty-icon">📅</div><h3>No events yet</h3><p>Click "Add event" to create one.</p></div>`;
+      return;
+    }
+    document.getElementById('tableWrap').innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Event</th><th>Type</th><th>Date</th><th>Points</th><th>Seats</th><th>Registered</th><th>Actions</th></tr></thead>
+      <tbody>${events.map(e=>`<tr>
+        <td style="font-weight:500">${e.name}</td>
+        <td><span class="badge badge-accent">${e.type}</span></td>
+        <td>${formatDate(e.date)}</td>
+        <td>${e.points}</td>
+        <td>${e.seats}</td>
+        <td>${e.participants?.length||0} / ${e.seats}</td>
+        <td>
+          <button class="btn btn-outline btn-sm" onclick="openEdit('${e._id}')" style="margin-right:6px">Edit</button>
+          <button class="btn btn-danger btn-sm"  onclick="handleDelete('${e._id}')">Delete</button>
+        </td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  function openAdd() {
+    editingId=null;
+    ['evName','evDate','evDesc'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('evPoints').value='';
+    document.getElementById('evSeats').value='';
+    document.getElementById('modalTitle').textContent='Add event';
+    document.getElementById('saveBtn').textContent='Add event';
+    clearError('evError');
+    openModal('eventModal');
+  }
+
+  function openEdit(id) {
+    editingId=id;
+    const e=events.find(x=>x._id===id);
+    document.getElementById('evName').value   = e.name;
+    document.getElementById('evDate').value   = e.date?.split('T')[0];
+    document.getElementById('evPoints').value = e.points;
+    document.getElementById('evSeats').value  = e.seats;
+    document.getElementById('evType').value   = e.type;
+    document.getElementById('evDesc').value   = e.description;
+    document.getElementById('modalTitle').textContent='Edit event';
+    document.getElementById('saveBtn').textContent='Save changes';
+    clearError('evError');
+    openModal('eventModal');
+  }
+
+  async function saveEvent() {
+    const name        = document.getElementById('evName').value.trim();
+    const type        = document.getElementById('evType').value;
+    const date        = document.getElementById('evDate').value;
+    const points      = parseInt(document.getElementById('evPoints').value)||0;
+    const seats       = parseInt(document.getElementById('evSeats').value)||0;
+    const description = document.getElementById('evDesc').value.trim();
+    clearError('evError');
+    if (!name||!date||!points||!seats||!description) { setError('evError','Please fill all fields.'); return; }
+    setLoading('saveBtn', true);
+    try {
+      if (editingId) { await updateEvent(editingId,{name,type,date,points,seats,description}); showToast('Event updated!'); }
+      else           { await createEvent({name,type,date,points,seats,description}); showToast('Event created!'); }
+      closeModal('eventModal');
+      await loadEvents();
+    } catch(err) { setError('evError', err.message); }
+    finally { setLoading('saveBtn', false); }
+  }
+
+  async function handleDelete(id) {
+    if (!confirm('Delete this event?')) return;
+    try {
+      await deleteEvent(id);
+      showToast('Event deleted.');
+      await loadEvents();
+    } catch(err) { showToast(err.message); }
+  }
+</script>
+</body>
+</html>

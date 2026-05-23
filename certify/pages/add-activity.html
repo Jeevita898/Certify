@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Add VTU Activity — Certify</title>
+
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body>
+
+    <div id="navbar"></div>
+
+    <div class="dash-wrap">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+
+            <div class="sidebar-profile">
+
+                <div class="avatar avatar-lg" id="sideAvatar">
+                </div>
+
+                <div class="sidebar-name" id="sideName">
+                </div>
+
+            </div>
+
+            <nav class="sidebar-nav" id="sidebarNav">
+            </nav>
+
+        </aside>
+
+        <!-- Main -->
+        <main class="fade-up">
+
+            <div class="page-hdr">
+
+                <h2>Add VTU Activity</h2>
+
+                <p>
+                    Upload certificate and let AI auto-fill details
+                </p>
+
+            </div>
+
+            <div class="card">
+
+                <div class="alert alert-info mb-4">
+
+                    <span>🤖</span>
+
+                    <span>
+                        Upload certificate → AI extracts details automatically
+                    </span>
+
+                </div>
+
+                <!-- Activity Name -->
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Activity Name *
+                    </label>
+
+                    <input type="text" id="actName" class="form-control" placeholder="AI will auto-fill">
+
+                </div>
+
+                <!-- Type + Date -->
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            VTU Category *
+                        </label>
+
+                        <select id="actType" class="form-control">
+
+                            <option value="">Select Category</option>
+
+                            <option>Helping Local School Students</option>
+                            <option>Rural Development / Village Outreach</option>
+                            <option>Environmental Activities</option>
+                            <option>Blood Donation / Health Camps</option>
+                            <option>NSS / NCC / Social Service</option>
+                            <option>Sports / Yoga / Fitness</option>
+                            <option>Cultural Activities</option>
+                            <option>Technical Events / Hackathon / Workshop</option>
+                            <option>Internship / Skill Development</option>
+                            <option>Research Paper / Innovation / Patent</option>
+                            <option>Entrepreneurship / Startup Work</option>
+                            <option>Tourism Promotion / Heritage</option>
+                            <option>Online Certification Courses</option>
+                            <option>Leadership / Student Clubs</option>
+                            <option>Other Approved Activity</option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label class="form-label">
+                            Date *
+                        </label>
+
+                        <input type="date" id="actDate" class="form-control">
+
+                    </div>
+
+                </div>
+
+                <!-- Brief -->
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Brief Description *
+                    </label>
+
+                    <textarea id="actBrief" class="form-control" placeholder="AI will auto-fill">
+</textarea>
+
+                </div>
+
+                <!-- Certificate -->
+                <div class="form-group">
+
+                    <label class="form-label">
+                        Certificate *
+                    </label>
+
+                    <input type="file" id="actFile" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.webp">
+
+                </div>
+
+                <!-- Analyze Button -->
+                <button type="button" class="btn btn-outline mt-3" id="analyzeBtn">
+
+                    🤖 Analyze Certificate
+
+                </button>
+
+                <!-- Error -->
+                <div id="actError" class="form-error hidden">
+                </div>
+
+                <!-- Success -->
+                <div id="actSuccess" class="alert alert-success hidden mt-3">
+                </div>
+
+                <!-- Buttons -->
+                <div class="flex gap-3 mt-4">
+
+                    <button class="btn btn-primary" id="submitBtn" onclick="handleSubmit()">
+
+                        Submit
+
+                    </button>
+
+                    <button class="btn btn-outline" onclick="clearForm()">
+
+                        Clear
+
+                    </button>
+
+                    <a href="student-dashboard.html" class="btn btn-ghost">
+
+                        Dashboard
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </main>
+
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/utils.js"></script>
+
+    <script>
+
+        const user = requireAuth('student');
+
+        if (user) init();
+
+        // ───────────────────────────────────────────
+        function init() {
+
+            renderNavbar(
+                'student',
+                user.firstName + ' ' + user.lastName
+            );
+
+            document.getElementById('sideAvatar').textContent =
+                initials(
+                    user.firstName + ' ' + user.lastName
+                );
+
+            document.getElementById('sideName').textContent =
+                user.firstName + ' ' + user.lastName;
+
+            document.getElementById('sidebarNav').innerHTML =
+                buildSidebar([
+                    { href: 'student-dashboard.html', icon: '📊', label: 'Dashboard' },
+                    { href: 'add-activity.html', icon: '➕', label: 'Add Activity' },
+                    { href: 'events.html', icon: '📅', label: 'Events' },
+                    { href: 'notifications.html', icon: '🔔', label: 'Notifications' },
+                    { divider: true },
+                    { href: 'student-profile.html', icon: '👤', label: 'My Profile' }
+                ]);
+
+        }
+
+        // ───────────────────────────────────────────
+        // AI Analyze Certificate
+        // ───────────────────────────────────────────
+
+        document
+            .getElementById('analyzeBtn')
+            .addEventListener(
+                'click',
+                analyzeCertificate
+            );
+
+        // ── Helper to infer category based on OCR Text ────────────
+        function inferCategory(text) {
+            const lower = text.toLowerCase();
+            if (lower.match(/hackathon|coding|workshop|technical|developer/)) return 'Technical Events / Hackathon / Workshop';
+            if (lower.match(/nss|ncc|social|volunteer/)) return 'NSS / NCC / Social Service';
+            if (lower.match(/blood|health|medical/)) return 'Blood Donation / Health Camps';
+            if (lower.match(/internship|intern|skill/)) return 'Internship / Skill Development';
+            if (lower.match(/paper|research|patent|conference/)) return 'Research Paper / Innovation / Patent';
+            if (lower.match(/startup|entrepreneur|business/)) return 'Entrepreneurship / Startup Work';
+            if (lower.match(/sports|yoga|fitness|marathon/)) return 'Sports / Yoga / Fitness';
+            if (lower.match(/cultural|dance|singing|art/)) return 'Cultural Activities';
+            if (lower.match(/online|coursera|udemy|certification/)) return 'Online Certification Courses';
+            return 'Other Approved Activity';
+        }
+
+        // ── Extract possible event name ────────────
+        function extractEventName(text) {
+            // Very naive extraction: Find lines that look like event names
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 5);
+            // Often event name is near the word "Certificate" or "Participation"
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].toLowerCase().includes('participation') && i + 1 < lines.length) {
+                    return lines[i+1];
+                }
+            }
+            return lines[0] || ''; // fallback to first line
+        }
+
+        // ── Extract possible organizer ────────────
+        function extractOrganizer(text) {
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 3);
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].toLowerCase().includes('organized by') && i + 1 < lines.length) {
+                    return lines[i+1];
+                }
+            }
+            return 'Unknown Organizer';
+        }
+
+        let currentOcrText = ''; // store for submission
+
+        async function analyzeCertificate() {
+            const file = document.getElementById('actFile').files[0];
+
+            if (!file) {
+                alert('Please select certificate');
+                return;
+            }
+            
+            const btn = document.getElementById('analyzeBtn');
+            btn.textContent = '⏳ Processing OCR...';
+            btn.disabled = true;
+
+            try {
+                // Tesseract OCR
+                const { data: { text } } = await Tesseract.recognize(
+                    file,
+                    'eng',
+                    { logger: m => console.log(m) }
+                );
+
+                console.log('OCR Result:', text);
+                currentOcrText = text;
+
+                // Rule-based logic
+                const suggestedCategory = inferCategory(text);
+                const suggestedName = extractEventName(text);
+                const suggestedOrganizer = extractOrganizer(text);
+
+                // AUTO FILL
+                document.getElementById('actName').value = suggestedName;
+                document.getElementById('actType').value = suggestedCategory;
+                
+                // We'll put the organizer in brief for now or create a hidden field
+                // Since the backend expects organizingBody in body, we'll store it globally
+                window.suggestedOrganizer = suggestedOrganizer;
+                
+                document.getElementById('actBrief').value = `Auto-extracted: Organized by ${suggestedOrganizer}. \n\nOriginal Text: ${text.substring(0, 100)}...`;
+
+                alert('AI Analysis completed locally without APIs!');
+
+            } catch (err) {
+                console.error(err);
+                alert('Failed to parse certificate image.');
+            } finally {
+                btn.textContent = '🤖 Analyze Certificate';
+                btn.disabled = false;
+            }
+        }
+
+        // ───────────────────────────────────────────
+        // Final Submit
+        // ───────────────────────────────────────────
+
+        async function handleSubmit() {
+
+            const name = document.getElementById('actName').value.trim();
+            const type = document.getElementById('actType').value;
+            const date = document.getElementById('actDate').value;
+            const brief = document.getElementById('actBrief').value.trim();
+            const file = document.getElementById('actFile').files[0];
+
+            if (!name || !type || !date || !brief) {
+                alert('Fill all fields');
+                return;
+            }
+
+            if (!file) {
+                alert('Upload certificate');
+                return;
+            }
+
+            const fd = new FormData();
+            fd.append('name', name);
+            fd.append('type', type);
+            fd.append('date', date);
+            fd.append('brief', brief);
+            fd.append('certificate', file);
+            
+            if (currentOcrText) {
+                fd.append('ocrText', currentOcrText);
+            }
+            if (window.suggestedOrganizer) {
+                fd.append('organizingBody', window.suggestedOrganizer);
+            }
+
+            try {
+                const token = getToken();
+                const response = await fetch(
+                    'http://localhost:5000/api/activities',
+                    {
+                        method: 'POST',
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        },
+                        body: fd
+                    }
+                );
+
+                const data = await response.json();
+                console.log(data);
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Submit failed');
+                }
+
+                alert(data.message || 'Activity submitted successfully');
+                clearForm();
+
+            } catch (err) {
+                console.error(err);
+                alert(err.message);
+            }
+        }
+
+        // ───────────────────────────────────────────
+        // Clear Form
+        // ───────────────────────────────────────────
+
+        function clearForm() {
+
+            document.getElementById('actName').value = '';
+
+            document.getElementById('actType').value = '';
+
+            document.getElementById('actDate').value = '';
+
+            document.getElementById('actBrief').value = '';
+
+            document.getElementById('actFile').value = '';
+
+        }
+
+    </script>
+
+</body>
+
+</html>

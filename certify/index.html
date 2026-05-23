@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Certify — Activity Point Management</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .home-nav .nav-link {
+      font-size: 13px;
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      text-align: center;
+      font-size: 12px;
+      color: var(--subtle);
+      margin-top: 4rem;
+    }
+
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .how-card {
+      border-left: 3px solid var(--accent);
+      padding: 1rem 1.25rem;
+      background: var(--surface);
+      border-radius: 0 var(--r-lg) var(--r-lg) 0;
+    }
+
+    .how-step {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .how-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .how-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .section-hdr {
+      font-family: 'Instrument Serif', serif;
+      font-size: 1.6rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .section-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar home-nav">
+    <a href="index.html" class="nav-brand">Certify <small>Activity Management</small></a>
+    <div class="nav-links">
+      <a href="pages/events.html" class="nav-link">Events</a>
+    </div>
+    <div class="nav-actions">
+      <a href="pages/login.html" class="btn btn-outline btn-sm">Sign in</a>
+      <a href="pages/signup.html" class="btn btn-primary btn-sm">Register</a>
+    </div>
+  </nav>
+
+  <div class="hero fade-up">
+    <div class="hero-eyebrow">Activity Point Management System</div>
+    <h1>Track every milestone,<br><em>validate every achievement</em></h1>
+    <p class="hero-sub">A centralized platform where students submit activity certificates and faculty proctors verify
+      them — streamlined, transparent, and secure.</p>
+    <div class="hero-btns">
+      <a href="pages/signup.html" class="btn btn-primary btn-lg">Get started</a>
+      <a href="pages/events.html" class="btn btn-outline btn-lg">Browse events</a>
+    </div>
+
+    <div class="features mt-6">
+      <div class="feat-card fade-up">
+        <div class="feat-icon">🎓</div>
+        <div class="feat-title">For students</div>
+        <div class="feat-desc">Upload certificates, track approval status, view activity points, and register for
+          upcoming events.</div>
+      </div>
+      <div class="feat-card fade-up">
+        <div class="feat-icon">✅</div>
+        <div class="feat-title">For faculty</div>
+        <div class="feat-desc">Review and validate only your assigned students' certificates with approve or reject
+          remarks.</div>
+      </div>
+      <div class="feat-card fade-up">
+        <div class="feat-icon">🛡️</div>
+        <div class="feat-title">Secure & role-based</div>
+        <div class="feat-desc">JWT-authenticated access ensures every user sees only what they're authorized to interact
+          with.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mt-6">
+    <div class="section-hdr">How it works</div>
+    <div class="section-sub">Three simple steps to manage your activity points</div>
+    <div class="how-grid">
+      <div class="how-card">
+        <div class="how-step">Step 01</div>
+        <div class="how-title">Register & select faculty</div>
+        <div class="how-desc">Create your student account and choose your assigned faculty proctor from the dropdown.
+        </div>
+      </div>
+      <div class="how-card">
+        <div class="how-step">Step 02</div>
+        <div class="how-title">Upload certificate</div>
+        <div class="how-desc">Fill in activity details, upload your certificate file, and submit for validation.</div>
+      </div>
+      <div class="how-card">
+        <div class="how-step">Step 03</div>
+        <div class="how-title">Faculty validates</div>
+        <div class="how-desc">Your assigned faculty reviews the certificate and approves or rejects with remarks.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    &copy; 2025 Certify — Activity Point Management System. Built with MERN Stack.
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>
+    // redirect if already logged in
+    const user = getSession();
+    if (user) redirectByRole(user.role);
+  </script>
+</body>
+
+</html>

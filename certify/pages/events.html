@@ -1,0 +1,131 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Events — Certify</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="navbar"></div>
+<div class="container fade-up">
+  <div class="flex items-center justify-between mb-6" style="flex-wrap:wrap;gap:12px">
+    <div class="page-hdr" style="margin-bottom:0"><h2>Upcoming events</h2><p>Browse and register for activities to earn points</p></div>
+    <select id="typeFilter" class="form-control" style="width:160px" onchange="loadEvents()">
+      <option value="">All types</option>
+      <option>Workshop</option><option>Hackathon</option><option>Seminar</option>
+      <option>Cultural</option><option>NSS/NCC</option>
+    </select>
+  </div>
+  <div class="event-grid" id="eventsGrid"><div class="empty"><div class="empty-icon">⏳</div><h3>Loading events...</h3></div></div>
+</div>
+
+<div class="modal-overlay" id="eventModal">
+  <div class="modal">
+    <div id="modalContent"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('eventModal')">Close</button>
+      <button class="btn btn-primary" id="modalRegBtn"></button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="../js/auth.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+  const user = getSession();
+  let allEvents = [];
+  let myEventIds = [];
+
+  if (user) {
+    renderNavbar(user.role, user.role==='student' ? user.firstName+' '+user.lastName : user.name);
+  } else {
+    document.getElementById('navbar').innerHTML = `
+      <nav class="navbar">
+        <a href="../index.html" class="nav-brand">Certify <small>Activity Management</small></a>
+        <div class="nav-links"><a href="events.html" class="nav-link active">Events</a></div>
+        <div class="nav-actions">
+          <a href="login.html" class="btn btn-outline btn-sm">Sign in</a>
+          <a href="signup.html" class="btn btn-primary btn-sm">Register</a>
+        </div>
+      </nav>`;
+  }
+
+  async function loadEvents() {
+    try {
+      const type = document.getElementById('typeFilter').value;
+      const [evRes] = await Promise.all([getEvents(type)]);
+      allEvents = evRes.events || [];
+      if (user && user.role === 'student') {
+        try {
+          const myRes = await getMyEvents();
+          myEventIds = (myRes.events || []).map(e => e._id);
+        } catch { myEventIds = []; }
+      }
+      renderGrid();
+    } catch(err) { showToast('Error loading events: '+err.message); }
+  }
+
+  function renderGrid() {
+    const grid = document.getElementById('eventsGrid');
+    if (!allEvents.length) {
+      grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">📅</div><h3>No events found</h3></div>`;
+      return;
+    }
+    grid.innerHTML = allEvents.map(e => {
+      const left = e.seatsLeft ?? (e.seats - (e.participants?.length || 0));
+      const reg  = myEventIds.includes(e._id);
+      return `<div class="event-card" onclick="openDetail('${e._id}')">
+        <div class="event-type">${e.type}</div>
+        <div class="event-name">${e.name}</div>
+        <div class="event-desc">${(e.description||'').substring(0,90)}${(e.description||'').length>90?'...':''}</div>
+        <div class="event-meta"><span>📅 ${formatDate(e.date)}</span><span>💺 ${left>0?left+' seats left':'Full'}</span></div>
+        <div class="event-footer">
+          <div><div class="event-pts">${e.points}</div><div class="event-pts-lbl">activity points</div></div>
+          ${reg?`<span class="badge badge-approved">Registered</span>`:left<=0?`<span class="badge badge-rejected">Full</span>`:`<span class="badge badge-accent">Open</span>`}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function openDetail(id) {
+    const e    = allEvents.find(ev => ev._id === id);
+    const left = e.seatsLeft ?? (e.seats - (e.participants?.length || 0));
+    const reg  = myEventIds.includes(id);
+    document.getElementById('modalContent').innerHTML = `
+      <div class="modal-title">${e.name}</div>
+      <div class="flex gap-2 mb-4" style="flex-wrap:wrap">
+        <span class="badge badge-accent">${e.type}</span>
+        <span class="tag">📅 ${formatDate(e.date)}</span>
+        <span class="tag">⭐ ${e.points} pts</span>
+        <span class="tag">💺 ${left} / ${e.seats} seats left</span>
+      </div>
+      <p style="font-size:14px;line-height:1.7;color:var(--text)">${e.description}</p>
+      ${reg?`<div class="alert alert-success mt-4">✅ You are registered for this event.</div>`:''}`;
+
+    const btn = document.getElementById('modalRegBtn');
+    btn.classList.remove('hidden');
+    if (!user) { btn.textContent='Sign in to register'; btn.disabled=false; btn.onclick=()=>{closeModal('eventModal');window.location.href='login.html';}; }
+    else if (user.role!=='student') { btn.classList.add('hidden'); }
+    else if (reg)   { btn.textContent='Already registered'; btn.disabled=true; }
+    else if (left<=0) { btn.textContent='No seats available'; btn.disabled=true; }
+    else { btn.textContent='Register for event'; btn.disabled=false; btn.onclick=()=>handleRegister(id); }
+    openModal('eventModal');
+  }
+
+  async function handleRegister(eventId) {
+    try {
+      await registerForEvent(eventId);
+      myEventIds.push(eventId);
+      showToast('Successfully registered!');
+      closeModal('eventModal');
+      renderGrid();
+    } catch(err) { showToast(err.message); }
+  }
+
+  loadEvents();
+</script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications — Certify</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="navbar"></div>
+<div class="dash-wrap">
+  <aside class="sidebar">
+    <div class="sidebar-profile">
+      <div class="avatar avatar-lg" id="sideAvatar"></div>
+      <div class="sidebar-name" id="sideName"></div>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+  </aside>
+  <main class="fade-up">
+    <div class="flex items-center justify-between mb-6">
+      <div class="page-hdr" style="margin-bottom:0"><h2>Notifications</h2><p>Updates from your faculty proctor</p></div>
+      <button class="btn btn-outline btn-sm" onclick="readAll()">Mark all as read</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden" id="notifList">
+      <div class="empty"><div class="empty-icon">⏳</div><h3>Loading...</h3></div>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script src="../js/auth.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+  const user = requireAuth('student');
+  if (user) init();
+
+  function init() {
+    renderNavbar('student', user.firstName+' '+user.lastName);
+    document.getElementById('sideAvatar').textContent = initials(user.firstName+' '+user.lastName);
+    document.getElementById('sideName').textContent   = user.firstName+' '+user.lastName;
+    document.getElementById('sidebarNav').innerHTML   = buildSidebar([
+      { href:'student-dashboard.html', icon:'📊', label:'Dashboard' },
+      { href:'add-activity.html',      icon:'➕', label:'Add activity' },
+      { href:'events.html',            icon:'📅', label:'Events' },
+      { href:'notifications.html',     icon:'🔔', label:'Notifications' },
+      { divider:true },
+      { href:'student-profile.html',   icon:'👤', label:'My profile' },
+    ]);
+    loadNotifs();
+  }
+
+  async function loadNotifs() {
+    try {
+      const { notifications } = await getNotifications();
+      const list = document.getElementById('notifList');
+      if (!notifications.length) {
+        list.innerHTML = `<div class="empty"><div class="empty-icon">🔔</div><h3>No notifications</h3><p>You'll see updates here when your faculty reviews your certificates.</p></div>`;
+        return;
+      }
+      list.innerHTML = notifications.map(n => `
+        <div class="notif-item ${n.read?'':'unread'}" id="notif-${n._id}" onclick="readOne('${n._id}',this)">
+          <div class="notif-dot ${n.read?'read':''}"></div>
+          <div>
+            <div class="notif-text">${n.message}</div>
+            <div class="notif-time">📅 ${formatDate(n.createdAt)}</div>
+          </div>
+        </div>`).join('');
+    } catch(err) { showToast('Error: '+err.message); }
+  }
+
+  async function readOne(id, el) {
+    await markNotifRead(id);
+    el.classList.remove('unread');
+    el.querySelector('.notif-dot').classList.add('read');
+  }
+
+  async function readAll() {
+    await markAllNotifsRead();
+    loadNotifs();
+    showToast('All marked as read.');
+  }
+</script>
+</body>
+</html>

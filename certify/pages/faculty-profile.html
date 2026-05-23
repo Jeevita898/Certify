@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Faculty Profile — Certify</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="navbar"></div>
+<div class="dash-wrap">
+  <aside class="sidebar">
+    <div class="sidebar-profile">
+      <div class="avatar avatar-lg avatar-faculty" id="sideAvatar"></div>
+      <div class="sidebar-name" id="sideName"></div>
+      <div class="sidebar-sub"  id="sideDept"></div>
+      <span class="badge badge-pending mt-2">Faculty Proctor</span>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+  </aside>
+  <main class="fade-up">
+    <div class="page-hdr"><h2>My profile</h2><p>Your faculty account details</p></div>
+    <div class="card mb-4">
+      <div class="flex items-center gap-4" style="margin-bottom:1.5rem">
+        <div class="avatar avatar-lg avatar-faculty" id="profileAvatar"></div>
+        <div>
+          <div style="font-family:'Instrument Serif',serif;font-size:1.5rem" id="profileName"></div>
+          <div class="text-muted text-sm mt-1" id="profileEmail"></div>
+          <span class="badge badge-pending mt-2">Faculty Proctor</span>
+        </div>
+      </div>
+      <div class="profile-grid" id="profileGrid"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Assigned students summary</div>
+      <div id="studentsWrap"><div class="empty"><div class="empty-icon">⏳</div><h3>Loading...</h3></div></div>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script src="../js/auth.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+  const user = requireAuth('faculty');
+  if (user) init();
+
+  async function init() {
+    renderNavbar('faculty', user.name);
+    document.getElementById('sideAvatar').textContent = initials(user.name);
+    document.getElementById('sideName').textContent   = user.name;
+    document.getElementById('sideDept').textContent   = user.department;
+    document.getElementById('sidebarNav').innerHTML   = buildSidebar([
+      { href:'faculty-dashboard.html', icon:'📊', label:'Dashboard' },
+      { divider:true },
+      { href:'faculty-profile.html',   icon:'👤', label:'My profile' },
+    ]);
+    try {
+      const { faculty, students } = await getFacultyProfile();
+      document.getElementById('profileAvatar').textContent = initials(faculty.name);
+      document.getElementById('profileName').textContent   = faculty.name;
+      document.getElementById('profileEmail').textContent  = faculty.email;
+      document.getElementById('profileGrid').innerHTML = `
+        <div class="profile-field"><div class="field-label">Department</div><div class="field-value">${faculty.department}</div></div>
+        <div class="profile-field"><div class="field-label">Employee ID</div><div class="field-value">${faculty.empId}</div></div>
+        <div class="profile-field"><div class="field-label">Role</div><div class="field-value">Faculty Proctor</div></div>
+        <div class="profile-field"><div class="field-label">Students assigned</div><div class="field-value">${students.length}</div></div>`;
+
+      if (!students.length) {
+        document.getElementById('studentsWrap').innerHTML = `<div class="empty"><div class="empty-icon">🎓</div><h3>No students assigned yet</h3></div>`;
+        return;
+      }
+      document.getElementById('studentsWrap').innerHTML = `<div class="table-wrap"><table>
+        <thead><tr><th>Student</th><th>USN</th><th>Department</th></tr></thead>
+        <tbody>${students.map(s=>`<tr>
+          <td><div style="font-weight:500">${s.firstName} ${s.lastName}</div><div class="text-muted text-sm">${s.email}</div></td>
+          <td>${s.usn}</td><td>${s.department}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>`;
+    } catch(err) { showToast('Error: '+err.message); }
+  }
+</script>
+</body>
+</html>
