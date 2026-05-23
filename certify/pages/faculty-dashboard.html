@@ -360,9 +360,15 @@ ${acts.length
 <td>${a.type}</td>
 
 <td>
-<a href="https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(a.fileUrl)}" target="_blank">
-  View
-</a>
+${
+  a.fileUrl
+    ? (
+        a.fileUrl.toLowerCase().includes('.pdf')
+          ? `<a href="https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(a.fileUrl)}" target="_blank">View</a>`
+          : `<a href="${a.fileUrl}" target="_blank">View</a>`
+      )
+    : '—'
+}
 </td>
 
 <td>
