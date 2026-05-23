@@ -3,7 +3,7 @@
    Updated for dynamic points approval + dashboards
    ============================================================ */
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'https://certify-eix1.onrender.com/api';
 
 /* ============================================================
    PATH HELPERS
