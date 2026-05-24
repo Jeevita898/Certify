@@ -5,7 +5,7 @@ https://certify-sand.vercel.app
 
 Certify is a full-stack web application developed for managing VTU student activity certificates, approvals, and activity points in a centralized and transparent manner.
 
-The system provides separate dashboards for Students, Faculty Proctors, and Admins with role-based access control, certificate verification workflows, analytics, leaderboard features, and real-time notifications.
+The system provides separate dashboards for Students, Faculty Proctors, and Admins with role-based access control, certificate verification workflows, analytics, leaderboard features, AI-assisted validation, and real-time notifications.
 
 ---
 
@@ -18,6 +18,8 @@ The system provides separate dashboards for Students, Faculty Proctors, and Admi
 - Real-time notifications
 - Leaderboard and badge system
 - Student profile dashboard
+- Certificate trust score generation
+- AI-based duplicate certificate checking
 
 ## Faculty Module
 - Review submitted certificates
@@ -25,6 +27,9 @@ The system provides separate dashboards for Students, Faculty Proctors, and Admi
 - Assign activity points
 - AI review insights panel
 - Download reports
+- Fraud risk analysis
+- Duplicate activity detection
+- AI-generated activity briefing
 
 ## Admin Module
 - Manage faculty and events
@@ -34,10 +39,11 @@ The system provides separate dashboards for Students, Faculty Proctors, and Admi
 - Activity category analytics
 
 ## Smart Features
-- OCR-based certificate parsing (planned)
-- Duplicate/fraud detection logic
+- OCR-based certificate text extraction
+- AI-powered duplicate certificate detection
 - Activity recommendation engine
-- Certificate trust score
+- Certificate trust score analysis
+- Fraud flag detection
 - Real-time notifications using Socket.io
 - Gamification leaderboard and badges
 
@@ -62,8 +68,40 @@ The system provides separate dashboards for Students, Faculty Proctors, and Admi
 - Socket.io
 - Cloudinary
 - Chart.js
+- Tesseract.js OCR
 - Render
 - Vercel
+
+---
+
+# AI Modules
+
+## Certificate Parser
+- OCR-based certificate extraction
+- Rule-based trust score generation
+- Fraud keyword detection
+- Metadata validation
+- Category recommendation
+
+:contentReference[oaicite:0]{index=0}
+
+## Duplicate Detector
+- Semantic keyword extraction
+- Jaccard similarity matching
+- Duplicate activity detection
+- Cross-student fraud detection
+- Time-window similarity analysis
+
+:contentReference[oaicite:1]{index=1}
+
+## Faculty AI Assistant
+- Automated risk assessment
+- Fraud analysis
+- Smart point recommendation
+- Duplicate activity warnings
+- Student activity behavior analysis
+
+:contentReference[oaicite:2]{index=2}
 
 ---
 
@@ -73,6 +111,11 @@ The system provides separate dashboards for Students, Faculty Proctors, and Admi
 Certify/
 │
 ├── backend/
+│   ├── ai/
+│   │   ├── certificateParser.js
+│   │   ├── duplicateDetector.js
+│   │   └── facultyAssistant.js
+│   │
 │   ├── models/
 │   ├── routes/
 │   ├── middleware/
@@ -190,7 +233,18 @@ https://certify-eix1.onrender.com
 
 ---
 
+# Future Improvements
 
+- Email notification system
+- Mobile application support
+- AI-based activity recommendations
+- Advanced PDF analytics reports
+- Multi-university support
+- Blockchain certificate verification
 
 ---
 
+# Author
+
+Jeevita Devadig  
+BMS College of Engineering
