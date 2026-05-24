@@ -69,7 +69,7 @@ The system provides separate dashboards for Students, Faculty Proctors, and Admi
 
 # Project Structure
 
-
+```bash
 Certify/
 │
 ├── backend/
@@ -87,18 +87,31 @@ Certify/
 │
 ├── .gitignore
 └── README.md
+```
 
+---
 
-Installation
-Clone Repository
+# Installation & Setup
+
+## 1. Clone Repository
+
+```bash
 git clone https://github.com/Jeevita898/Certify.git
 cd Certify
-Backend Setup
+```
+
+---
+
+## 2. Backend Setup
+
+```bash
 cd backend
 npm install
+```
 
-Create .env file:
+Create `.env` file inside backend folder:
 
+```env
 PORT=5000
 MONGO_URI=your_mongodb_uri
 JWT_SECRET=your_secret_key
@@ -108,15 +121,76 @@ CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 CLIENT_URL=http://127.0.0.1:5500
 NODE_ENV=development
+```
 
 Run backend:
 
+```bash
 npm start
-Frontend Setup
+```
+
+---
+
+## 3. Frontend Setup
 
 Open frontend using VS Code Live Server:
-certify/index.html
 
-Deployment
-Frontend- Hosted on Vercel
-Backend- Hosted on Render
+```bash
+certify/index.html
+```
+
+---
+
+# Deployment
+
+## Frontend Deployment (Vercel)
+
+1. Push project to GitHub
+2. Import repository into Vercel
+3. Set root directory as:
+
+```bash
+certify
+```
+
+4. Deploy frontend
+
+Frontend URL:
+https://certify-sand.vercel.app
+
+---
+
+## Backend Deployment (Render)
+
+1. Create new Web Service on Render
+2. Connect GitHub repository
+3. Set root directory as:
+
+```bash
+backend
+```
+
+4. Build Command:
+
+```bash
+npm install
+```
+
+5. Start Command:
+
+```bash
+npm start
+```
+
+6. Add environment variables from `.env`
+7. Deploy backend
+
+Backend URL:
+https://certify-eix1.onrender.com
+
+---
+
+
+
+---
+
