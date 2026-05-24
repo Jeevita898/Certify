@@ -83,8 +83,6 @@ The system provides separate dashboards for Students, Faculty Proctors, and Admi
 - Metadata validation
 - Category recommendation
 
-:contentReference[oaicite:0]{index=0}
-
 ## Duplicate Detector
 - Semantic keyword extraction
 - Jaccard similarity matching
@@ -92,16 +90,12 @@ The system provides separate dashboards for Students, Faculty Proctors, and Admi
 - Cross-student fraud detection
 - Time-window similarity analysis
 
-:contentReference[oaicite:1]{index=1}
-
 ## Faculty AI Assistant
 - Automated risk assessment
 - Fraud analysis
 - Smart point recommendation
 - Duplicate activity warnings
 - Student activity behavior analysis
-
-:contentReference[oaicite:2]{index=2}
 
 ---
 
@@ -184,55 +178,6 @@ certify/index.html
 
 ---
 
-# Deployment
-
-## Frontend Deployment (Vercel)
-
-1. Push project to GitHub
-2. Import repository into Vercel
-3. Set root directory as:
-
-```bash
-certify
-```
-
-4. Deploy frontend
-
-Frontend URL:
-https://certify-sand.vercel.app
-
----
-
-## Backend Deployment (Render)
-
-1. Create new Web Service on Render
-2. Connect GitHub repository
-3. Set root directory as:
-
-```bash
-backend
-```
-
-4. Build Command:
-
-```bash
-npm install
-```
-
-5. Start Command:
-
-```bash
-npm start
-```
-
-6. Add environment variables from `.env`
-7. Deploy backend
-
-Backend URL:
-https://certify-eix1.onrender.com
-
----
-
 # Future Improvements
 
 - Email notification system
@@ -244,7 +189,4 @@ https://certify-eix1.onrender.com
 
 ---
 
-# Author
 
-Jeevita Devadig  
-BMS College of Engineering
