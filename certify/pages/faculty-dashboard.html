@@ -163,7 +163,7 @@ async function openAiReview(id) {
   
   try {
     const token = getToken();
-    const res = await fetch(`http://localhost:5000/api/activities/${id}/ai-briefing`, {
+    const res = await fetch(`https://certify-eix1.onrender.com/api/activities/${id}/ai-briefing`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
